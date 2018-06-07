@@ -18,33 +18,22 @@ $stmt->execute();
 $restaurantes = $stmt->fetchAll();
 
 
-/*$query = 'SELECT t.id
-FROM tipo_cocina t
-LEFT JOIN r.restaurantes
-ON t.id = r.id_cocina
-';
-$stmt = $pdo->prepare($query);
-$stmt->execute([$query]);
-$id_cocina = $stmt->fetch();
-*/
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if (!isset($_POST['_method']) && !isset($_POST['id'])) {
     $params = [
         'nombre' => htmlspecialchars($_POST['nombre']),
         'codigo_postal' => htmlspecialchars($_POST['codigo_postal']),
         'telefono' => htmlspecialchars($_POST['telefono']),
-        'info' => htmlspecialchars($_POST['fotos']),
-        'fotos' => htmlspecialchars($_POST['info']),
+        'info' => htmlspecialchars($_POST['info']),
+        'id_cocina' => htmlspecialchars($_POST['id_cocina']),
+        'fotos' => htmlspecialchars($_POST['imagenOculta']),
+        'usr' => htmlspecialchars($_SESSION['session_id']),
         'status' => htmlspecialchars($_POST['status']),
-        'cocina' => $_POST['id_cocina'],
-        'user' => $_POST['id_usuario'],
-
     ];
 
     $query = '
     INSERT INTO restaurantes (nombre, codigo_postal, telefono, info, id_cocina, fotos, id_usuario, status)
-    VALUES (:nombre, :codigo_postal, :telefono, :info, :fotos, :status, :id_usuario, :id_cocina, :id)
+    VALUES (:nombre, :codigo_postal, :telefono, :info,:id_cocina, :imagenOculta, :session_id, :status)
     ';
     $stmt = $pdo->prepare($query);
     $stmt->execute($params);
@@ -225,7 +214,7 @@ if ($_POST['_method'] === 'PUT') {
                                         <label for="usr">Usuario</label>
                                         <select name="usr" id="id_usuario" class="form-control">
                                             <?php foreach ($usuarios as $users) { ?>
-                                                <option value="<?= $users['id']?>">
+                                                <option value="<?= $session_id?>">
                                                     <?= $users['nombre'] ?>
                                                 </option>
                                             <?php }?>
@@ -234,8 +223,8 @@ if ($_POST['_method'] === 'PUT') {
                                 </div>
                                 <div class="col-md-2">
                                     <div class="form-group">
-                                        <label for="cocina">Tipo de Cocina</label>
-                                        <select name="cocina" id="id_cocina" class="form-control">
+                                        <label for="id_cocina">Tipo de Cocina</label>
+                                        <select name="id_cocina" id="id_cocina" class="form-control">
                                             <?php foreach ($tipo_cocina as $cocinas) { ?>
                                             <option value="<?= $cocinas['id']?>">
                                                 <?= $cocinas['nombre'] ?>
