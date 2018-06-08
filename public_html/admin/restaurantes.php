@@ -3,6 +3,9 @@
 <?php
 $restauranteEdit = null;
 
+$cocinax = ['nombre'];
+
+
 $stmt = $pdo->prepare('SELECT id, nombre FROM tipo_cocina');
 $stmt->execute();
 $tipo_cocina = $stmt->fetchAll();
@@ -13,9 +16,16 @@ $usuarios = $stmt->fetchAll();
 
 
 
-$stmt = $pdo->prepare('SELECT * FROM restaurantes');
+$stmt = $pdo->prepare('SELECT * FROM restaurantes ORDER BY orden asc');
 $stmt->execute();
 $restaurantes = $stmt->fetchAll();
+
+/*if (isset($_POST['id'])) {
+    $query = 'SELECT t.nombre FROM tipo_cocina t LEFT JOIN restaurantes r ON t.nombre = r.nombre WHERE t.id = ?';
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([$_POST['id']]);
+    $cocinax = $stmt->fetchAll();
+}*/
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -26,14 +36,15 @@ if (!isset($_POST['_method']) && !isset($_POST['id'])) {
         'telefono' => htmlspecialchars($_POST['telefono']),
         'info' => htmlspecialchars($_POST['info']),
         'id_cocina' => htmlspecialchars($_POST['id_cocina']),
-        'fotos' => htmlspecialchars($_POST['imagenOculta']),
+        'fotos' => htmlspecialchars(substr($_POST['imagenOculta'],12)),
         'usr' => htmlspecialchars($_SESSION['session_id']),
         'status' => htmlspecialchars($_POST['status']),
+
     ];
 
     $query = '
     INSERT INTO restaurantes (nombre, codigo_postal, telefono, info, id_cocina, fotos, id_usuario, status)
-    VALUES (:nombre, :codigo_postal, :telefono, :info,:id_cocina, :imagenOculta, :session_id, :status)
+    VALUES (:nombre, :codigo_postal, :telefono, :info,:id_cocina, :fotos, :usr, :status)
     ';
     $stmt = $pdo->prepare($query);
     $stmt->execute($params);
@@ -45,7 +56,7 @@ if (!isset($_POST['_method']) && !isset($_POST['id'])) {
 
 if (isset($_POST['id'])) {
     $query = '
-SELECT id, nombre, codigo_postal, telefono, info, fotos, id_cocina, id_usuario, status 
+SELECT id, nombre, codigo_postal, telefono, info, id_cocina, fotos, id_usuario, status 
 FROM restaurantes WHERE id = ?';
     $stmt = $pdo->prepare($query);
     $stmt->execute([$_POST['id']]);
@@ -59,17 +70,18 @@ if ($_POST['_method'] === 'PUT') {
         'nombre' => htmlspecialchars($_POST['nombre']),
         'codigo_postal' => htmlspecialchars($_POST['codigo_postal']),
         'telefono' => htmlspecialchars($_POST['telefono']),
-        'info' => htmlspecialchars($_POST['fotos']),
-        'fotos' => htmlspecialchars($_POST['info']),
+        'info' => htmlspecialchars($_POST['info']),
+        'id_cocina' => htmlspecialchars($_POST['id_cocina']),
+        'fotos' => htmlspecialchars(substr($_POST['imagenOculta'],12)),
         'status' => htmlspecialchars($_POST['status']),
-        'cocina' => ($_POST['id_cocina']),
-        'usr' => $_POST['id_usuario'],
-        'id' => $_POST['id'],
+        'restau' =>  $restauranteEdit['id'],
+
     ];
 
     $query = '
-    UPDATE restaurantes SET nombre = :nombre, codigo_postal = :codigo_postal, telefono = :telefono, info = :info, fotos = :fotos, status = :status, cocina = :id_cocina, usr = id_usuario
-    WHERE id = :id
+    UPDATE restaurantes SET nombre = :nombre, codigo_postal = :codigo_postal, 
+    telefono = :telefono, info = :info, id_cocina = :id_cocina, fotos = :fotos, status = :status
+    WHERE id = :restau
     ';
     $stmt = $pdo->prepare($query);
     $stmt->execute($params);
@@ -124,8 +136,6 @@ if ($_POST['_method'] === 'PUT') {
                                                value="<?= $restauranteEdit['nombre'] ?>">
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="row">
                                         <div class="col-md-2">
                                             <div class="form-group">
                                                 <label for="codigo_postal">Codigo Postal</label>
@@ -133,7 +143,7 @@ if ($_POST['_method'] === 'PUT') {
                                                        value="<?= $restauranteEdit['codigo_postal'] ?>">
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group">
                                                 <label for="telefono">Teléfono</label>
                                                 <input type="text" class="form-control" id="telefono" name="telefono"
@@ -142,18 +152,22 @@ if ($_POST['_method'] === 'PUT') {
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label for="info">Info</label>
-                                                <input type="text" class="form-control" id="info" name="info"
-                                                       value="<?= $restauranteEdit['info'] ?>">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
+                                                <label for="fotos">Fotos</label>
                                                 <input type="file" name="fotos" id="fotos" class="form-control"
                                                        value="<?= $restauranteEdit['fotos'] ?>">
                                                 <input type="hidden" name="imagenOculta" id="imagenOculta">
                                             </div>
                                         </div>
+                                <div class="col-md-2">
+                                    <div class="form-group">
+                                        <label for="id_cocina">Tipo de Cocina</label>
+                                        <select name="id_cocina" id="id_cocina" class="form-control" >
+                                            <?php foreach ($tipo_cocina as $cocinas) { ?>
+                                                <option value="<?= $cocinas['id']?>" selected="<?=$restauranteEdit['tipo_cocina']?>">
+                                                    <?= $cocinas['nombre'] ?>
+                                                </option>
+                                            <?php }?>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="col-md-2">
@@ -169,6 +183,15 @@ if ($_POST['_method'] === 'PUT') {
                                                 Activo
                                             </option>
                                         </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="info">Información</label>
+                                        <input type="text" class="form-control" id="info" name="info"
+                                               value="<?= $restauranteEdit['info'] ?>">
                                     </div>
                                 </div>
                             </div>
@@ -209,18 +232,7 @@ if ($_POST['_method'] === 'PUT') {
                                         <input type="hidden" name="imagenOculta" id="imagenOculta">
                                     </div>
                                 </div>
-                                <div class="col-md-2">
-                                    <div class="form-group">
-                                        <label for="usr">Usuario</label>
-                                        <select name="usr" id="id_usuario" class="form-control">
-                                            <?php foreach ($usuarios as $users) { ?>
-                                                <option value="<?= $session_id?>">
-                                                    <?= $users['nombre'] ?>
-                                                </option>
-                                            <?php }?>
-                                        </select>
-                                    </div>
-                                </div>
+
                                 <div class="col-md-2">
                                     <div class="form-group">
                                         <label for="id_cocina">Tipo de Cocina</label>
@@ -292,9 +304,9 @@ if ($_POST['_method'] === 'PUT') {
                             <th></th>
                         </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="sort">
                         <?php foreach ($restaurantes as $restaurante) { ?>
-                            <tr>
+                            <tr id="<?= $restaurante['id'] ?>">
                                 <td><?= $restaurante['nombre'] ?></td>
                                 <td><?= $restaurante['codigo_postal'] ?></td>
                                 <td><?= $restaurante['telefono'] ?></td>
@@ -334,11 +346,25 @@ if ($_POST['_method'] === 'PUT') {
 </div>
 
 <script src="assets/js/vendor/jquery-3.3.1.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 <script src="assets/js/vendor/bootstrap.min.js"></script>
 <script src="assets/js/vendor/adminlte.min.js"></script>
 <script src="assets/js/app.js"></script>
 
 <script>
+    $(".sort").sortable({ placeholder: "ui-state-highlight",opacity: 0.6, cursor: 'move',update: function() {
+        var order = $(this).sortable("toArray");
+        let obj = {
+            "accion": "ordenarRes",
+            "ordenamientoRes" : order
+        }
+        $.post("includes/sortRes.php", obj, function(respuesta){
+            $(".error").html(respuesta).fadeIn("fast").fadeOut(2500);
+        });
+    }}).disableSelection();
+
+
+
     $("#fotos").on('change', function() {
         let fotos = new FormData($("form")[0]);
         console.log($(this).val());
